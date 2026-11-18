@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLOODINTEL Viewer</title>
+<meta name="description" content="Research prototype of FLOODINTEL, a flood digital twin: observed, modelled and development layers for the Lower Periyar test basin (Kerala).">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true" style="color:#1f3a5f">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 2C8 7.5 5 11 5 14.5a7 7 0 0 0 14 0C19 11 16 7.5 12 2z" fill="currentColor"/><path d="M5.5 16.5c2 1.2 4 1.2 6.5 0s4.5-1.2 6.5 0" stroke="#fff" stroke-width="1.6" fill="none"/></svg>
+    </span>
+    <div>
+      <h1>FLOODINTEL <span class="muted">· flood digital twin viewer</span></h1>
+      <p class="sub">Test basin: Lower Periyar, Aluva–Kochi, Kerala · 30 m grid · all layers are measured outputs of our pipeline</p>
+    </div>
+  </div>
+  <div class="badges">
+    <span class="badge badge-o">Research prototype</span>
+    <span class="badge badge-warn" title="The Assam pilot basin is proposed for the NESFIC prototype phase">| Assam pilot basin: proposed</span>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="panel left" id="leftPanel">
+    <section>
+      <h2>Flood event</h2>
+      <select id="eventSelect" aria-label="Flood event"></select>
+      <p class="hint" id="eventHint"></p>
+    </section>
+
+    <section class="group" data-group="O">
+      <h2><span class="tag tag-o">O</span> Observed <small>Sentinel-1 satellite</small></h2>
+      <div id="layers-O"></div>
+    </section>
+    <section class="group" data-group="S">
+      <h2><span class="tag tag-s">S</span> Modelled risk <small>LightGBM + terrain</small></h2>
+      <div id="layers-S"></div>
+    </section>
+    <section class="group" data-group="D">
+      <h2><span class="tag tag-d">D</span> Development <small>paving &amp; UICA</small></h2>
+      <div id="layers-D"></div>
+      <div class="year" id="yearBox">
+        <label for="yearSlider">Imperviousness year: <b id="yearLabel">2025</b> · <span id="yearKm2"></span></label>
+        <input type="range" id="yearSlider" min="2017" max="2025" step="1" value="2025">
+        <button class="btn" id="playBtn" type="button">▶ Play 2017→2025</button>
+      </div>
+    </section>
+    <section class="group disabled">
+      <h2><span class="tag tag-f">F</span> Forecast &amp; <span class="tag tag-h">H</span> simulation</h2>
+      <p class="hint">Proposed for the MVP phase (milestones M5–M6). Not part of this prototype.</p>
+    </section>
+    <section>
+      <h2>Basemap</h2>
+      <div class="seg" id="basemapSeg">
+        <button type="button" data-b="light" class="on">Map</button>
+        <button type="button" data-b="sat">Satellite</button>
+      </div>
+    </section>
+  </aside>
+
+  <div class="mapwrap">
+    <div id="map" aria-label="Map"></div>
+    <div class="legend" id="legend"></div>
+    <div class="timeline" id="timeline">
+      <div class="tl-head">
+        <b>Satellite pass timeline</b>
+        <span class="tl-key"><i class="k kept"></i>kept <i class="k unverified"></i>unverified <i class="k rejected"></i>rejected</span>
+      </div>
+      <div class="tl-track" id="tlTrack"></div>
+    </div>
+  </div>
+
+  <aside class="panel right" id="rightPanel">
+    <nav class="tabs" role="tablist">
+      <button type="button" role="tab" data-tab="summary" class="on">Event</button>
+      <button type="button" role="tab" data-tab="inspect">Inspect</button>
+      <button type="button" role="tab" data-tab="hotspots">Hotspots</button>
+      <button type="button" role="tab" data-tab="about">Validation</button>
+      <button type="button" role="tab" data-tab="scenario">Scenario</button>
+    </nav>
+    <section class="tab on" id="tab-summary"></section>
+    <section class="tab" id="tab-inspect">
+      <p class="hint">Click anywhere on the map to read every layer at that 30 m cell. Each value carries its source.</p>
+      <div id="inspectOut"></div>
+    </section>
+    <section class="tab" id="tab-hotspots">
+      <p class="hint">2 km blocks ranked by <b>new paving between 2017 and 2025 on High / Very High risk land</b>: where development is adding to flood exposure. Click a row to zoom.</p>
+      <ol id="hotList" class="hotlist"></ol>
+    </section>
+    <section class="tab" id="tab-about"></section>
+    <section class="tab" id="tab-scenario">
+      <div class="proposed">
+        <b>Scenario tool: proposed (milestone M4)</b>
+        <p>A planner draws or uploads a planned layout. The twin re-routes the new paved area through the drainage network, recomputes UICA downstream, and reports which places move up a risk class.</p>
+        <p>The routing engine behind this already runs (UICA routing over the 9,130 km² upstream catchment). The drawing interface is not built yet.</p>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<footer class="foot">
+  Data: Copernicus Sentinel-1 · NDEM (NRSC/ISRO) flood maps · FABDEM · HydroSHEDS · Dynamic World · GHSL · CHIRPS. Base maps © Esri, © OpenStreetMap contributors.
+  Test basin: Lower Periyar, Kerala. NESFIC-D-18.
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="data/meta.js"></script>
+<script src="data/query.js"></script>
+<script src="app.js?v=2"></script>
+</body>
+</html>
