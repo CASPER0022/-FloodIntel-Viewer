@@ -147,3 +147,11 @@ select, .btn { font: inherit; color: var(--ink); background: var(--bg); border: 
   .legend { max-width: 170px; }
 }
 .leaflet-image-layer.px { image-rendering: pixelated; }
+
+.tag-e { background: #b91c1c; }
+.facrow { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 13px; cursor: pointer; }
+.facdot { width: 11px; height: 11px; border-radius: 50%; flex: none; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #888; }
+.facsum td, .facsum th { font-size: 12px; padding: 4px 4px; border-bottom: 1px solid var(--line); text-align: right; }
+.facsum th:first-child, .facsum td:first-child { text-align: left; }
+.facsum { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.faclist li { grid-template-columns: 14px 1fr; }

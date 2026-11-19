@@ -6,7 +6,7 @@
 <title>FLOODINTEL Viewer</title>
 <meta name="description" content="Research prototype of FLOODINTEL, a flood digital twin: observed, modelled and development layers for the Lower Periyar test basin (Kerala).">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 <header class="topbar">
@@ -50,6 +50,11 @@
         <button class="btn" id="playBtn" type="button">▶ Play 2017→2025</button>
       </div>
     </section>
+    <section class="group" data-group="E">
+      <h2><span class="tag tag-e">E</span> Exposure <small>critical facilities, OpenStreetMap</small></h2>
+      <div id="facControls"></div>
+      <label class="layer-row" style="margin-top:6px"><input type="checkbox" id="facRiskOnly"><span class="prov">Show only facilities in High / Very High risk</span></label>
+    </section>
     <section class="group disabled">
       <h2><span class="tag tag-f">F</span> Forecast &amp; <span class="tag tag-h">H</span> simulation</h2>
       <p class="hint">Proposed for the MVP phase (milestones M5–M6). Not part of this prototype.</p>
@@ -80,6 +85,7 @@
       <button type="button" role="tab" data-tab="summary" class="on">Event</button>
       <button type="button" role="tab" data-tab="inspect">Inspect</button>
       <button type="button" role="tab" data-tab="hotspots">Hotspots</button>
+      <button type="button" role="tab" data-tab="facilities">Facilities</button>
       <button type="button" role="tab" data-tab="about">Validation</button>
       <button type="button" role="tab" data-tab="scenario">Scenario</button>
     </nav>
@@ -92,6 +98,7 @@
       <p class="hint">2 km blocks ranked by <b>new paving between 2017 and 2025 on High / Very High risk land</b>: where development is adding to flood exposure. Click a row to zoom.</p>
       <ol id="hotList" class="hotlist"></ol>
     </section>
+    <section class="tab" id="tab-facilities"></section>
     <section class="tab" id="tab-about"></section>
     <section class="tab" id="tab-scenario">
       <div class="proposed">
@@ -111,6 +118,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script src="data/meta.js"></script>
 <script src="data/query.js"></script>
-<script src="app.js?v=2"></script>
+<script src="app.js?v=3"></script>
 </body>
 </html>

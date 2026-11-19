@@ -248,8 +248,73 @@
     out.innerHTML = h;
   });
 
+
+  // ---------------------------------------------------------------- critical facilities (exposure)
+  const FAC = window.FACILITIES ? window.FACILITIES.features : [];
+  const FSUM = M.facilities_summary || {};
+  const CATCOL = { Health: "#dc2626", Education: "#7c3aed", Emergency: "#0f766e", Power: "#d97706" };
+  const RISKNAME = ["Open water", "Very Low", "Low", "Moderate", "High", "Very High"];
+  const facOn = { Health: false, Education: false, Emergency: false, Power: false };
+  map.createPane("pFac"); map.getPane("pFac").style.zIndex = 460;
+  const facGroup = L.layerGroup().addTo(map);
+  function facPopup(p) {
+    const fl = [...new Set([...p.flood_ours, ...p.flood_ndem])];
+    return `<b>${p.name || "(unnamed " + p.kind + ")"}</b><br>${p.cat} · ${p.kind}<br>Risk class: <b>${RISKNAME[p.risk]}</b>` +
+      (p.hand_m != null ? `<br>Height above drainage: ${p.hand_m} m` : "") +
+      `<br>Flooded in validated events: <b>${fl.length ? fl.join(", ") : "none"}</b>` +
+      (fl.length ? `<br><small>our map: ${p.flood_ours.join(", ") || "–"} · NDEM: ${p.flood_ndem.join(", ") || "–"}</small>` : "") +
+      `<br><small>Source: OpenStreetMap; risk and flood from FLOODINTEL layers</small>`;
+  }
+  function drawFacilities() {
+    facGroup.clearLayers();
+    const riskOnly = document.getElementById("facRiskOnly").checked;
+    FAC.forEach((f) => {
+      const p = f.properties;
+      if (!facOn[p.cat] || (riskOnly && p.risk < 4)) return;
+      const flooded = p.flood_ours.length || p.flood_ndem.length;
+      L.circleMarker([f.geometry.coordinates[1], f.geometry.coordinates[0]], {
+        pane: "pFac", radius: flooded ? 6 : 4, color: p.risk === 5 ? "#111827" : "#ffffff", weight: p.risk === 5 ? 2 : 1,
+        fillColor: CATCOL[p.cat], fillOpacity: 0.95,
+      }).bindPopup(facPopup(p)).addTo(facGroup);
+    });
+  }
+  (function facControls() {
+    const box = document.getElementById("facControls");
+    Object.keys(CATCOL).forEach((cat) => {
+      const s = FSUM[cat] || { total: 0 };
+      const row = document.createElement("label"); row.className = "facrow";
+      row.innerHTML = `<input type="checkbox"><span class="facdot" style="background:${CATCOL[cat]}"></span>${cat} <span class="prov" style="margin-left:auto">${s.total}</span>`;
+      row.querySelector("input").addEventListener("change", (e) => { facOn[cat] = e.target.checked; drawFacilities(); });
+      box.appendChild(row);
+    });
+    document.getElementById("facRiskOnly").addEventListener("change", drawFacilities);
+  })();
+  function renderFacilitiesTab() {
+    const cats = Object.keys(CATCOL);
+    let h = `<h2 style="margin-top:12px">Critical facilities at risk</h2>
+      <p class="hint">Hospitals, schools, police and fire stations, shelters and power substations from OpenStreetMap, checked against the risk map and the four validated flood events.</p>
+      <table class="facsum"><tr><th>Type</th><th>Total</th><th>High / Very High</th><th>Very High</th><th>Flooded*</th></tr>`;
+    cats.forEach((c) => { const s = FSUM[c]; if (s) h += `<tr><td><span class="facdot" style="display:inline-block;background:${CATCOL[c]};margin-right:5px"></span>${c}</td><td>${s.total}</td><td>${s.high_or_very_high}</td><td>${s.very_high}</td><td>${s.flooded_any_event}</td></tr>`; });
+    h += `</table><p class="hint">*within ~30 m of flood water in at least one validated event (our Sentinel-1 map or the official NDEM map).</p>
+      <h2>Facilities that flooded</h2><ol class="hotlist faclist" id="facList"></ol>`;
+    document.getElementById("tab-facilities").innerHTML = h;
+    const ol = document.getElementById("facList");
+    FAC.filter((f) => f.properties.flood_ours.length || f.properties.flood_ndem.length)
+      .sort((a, b) => b.properties.risk - a.properties.risk || (b.properties.flood_ours.length + b.properties.flood_ndem.length) - (a.properties.flood_ours.length + a.properties.flood_ndem.length))
+      .forEach((f) => {
+        const p = f.properties, li = document.createElement("li");
+        const fl = [...new Set([...p.flood_ours, ...p.flood_ndem])];
+        li.innerHTML = `<span class="facdot" style="background:${CATCOL[p.cat]};margin-top:4px"></span><span><b>${p.name || "Unnamed " + p.kind}</b><span class="hs"><br>${p.kind} · risk ${RISKNAME[p.risk]} · flooded ${fl.join(", ")}</span></span>`;
+        li.addEventListener("click", () => {
+          facOn[p.cat] = true; document.querySelectorAll("#facControls input")[cats.indexOf(p.cat)].checked = true; drawFacilities();
+          map.setView([f.geometry.coordinates[1], f.geometry.coordinates[0]], 15);
+          L.popup().setLatLng([f.geometry.coordinates[1], f.geometry.coordinates[0]]).setContent(facPopup(p)).openOn(map);
+        });
+        ol.appendChild(li);
+      });
+  }
   // ---------------------------------------------------------------- boot
-  renderLayerControls(); sync(); setEvent(curEvent); renderAbout(); renderHotspots();
+  renderLayerControls(); sync(); setEvent(curEvent); renderAbout(); renderHotspots(); renderFacilitiesTab();
 
   // deep links for screenshots and demos, e.g.
   // ?event=2019-08-10&layers=susceptibility,impervious&year=2017&tab=hotspots&click=10.05,76.30&zoom=10.05,76.30,13
@@ -261,6 +326,7 @@
     renderLayerControls(); sync();
   }
   if (P.get("year")) setYear(+P.get("year"));
+  if (P.get("fac")) { P.get("fac").split(",").forEach((c) => { if (c in facOn) { facOn[c] = true; document.querySelectorAll("#facControls input")[Object.keys(CATCOL).indexOf(c)].checked = true; } }); if (P.get("facrisk")) document.getElementById("facRiskOnly").checked = true; drawFacilities(); }
   if (P.get("basemap")) document.querySelector(`#basemapSeg button[data-b="${P.get("basemap")}"]`)?.click();
   if (P.get("zoom")) { const [a, b, z] = P.get("zoom").split(",").map(Number); map.setView([a, b], z); }
   if (P.get("tab")) document.querySelector(`.tabs button[data-tab="${P.get("tab")}"]`)?.click();
